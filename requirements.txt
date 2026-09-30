@@ -1,0 +1,8 @@
+streamlit
+pandas
+numpy
+plotly
+pyarrow
+fastapi
+uvicorn[standard]
+requests

@@ -10,9 +10,21 @@ from fastapi import FastAPI, HTTPException
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+PARAMETERS = {
+    "output_voltage_pos15_V": "+15V Output",
+    "output_voltage_neg15_V": "-15V Output",
+    "output_voltage_5V_V": "5V Output",
+    "efficiency_percent": "Efficiency",
+    "switching_frequency_Hz": "Switching Frequency",
+    "regulation_percent": "Regulation",
+    "ripple_mV": "Ripple",
+    "turn_on_rise_time_us": "Turn-On Rise Time",
+}
+
 INTEGRATED_FILE = (
     PROJECT_ROOT
-    / "results\integrated"
+    / "results"
+    / "integrated"
     / "integrated_component_screening.csv"
 )
 
@@ -24,8 +36,23 @@ MEASUREMENTS_FILE = (
 
 PREDICTIONS_FILE = (
     PROJECT_ROOT
-    / "results\module_b"
+    / "results"
+    / "module_b"
     / "b0_predictions.parquet"
+)
+
+MODULE_B_VALIDATION_FILE = (
+    PROJECT_ROOT
+    / "results"
+    / "module_b"
+    / "validation_prediction_error_summary.csv"
+)
+
+MODULE_B_NORMAL_FILE = (
+    PROJECT_ROOT
+    / "results"
+    / "module_b"
+    / "normal_validation_error_summary.csv"
 )
 
 
@@ -114,10 +141,12 @@ def get_components():
     ]
 
     df = integrated_df[columns].copy()
-
-    df = df.where(pd.notna(df), None)
-
-    return df.to_dict(orient="records")
+    records = df.to_dict(orient="records")
+    return [
+        {key: (None if pd.isna(value) else value.item() if hasattr(value, "item") else value)
+         for key, value in record.items()}
+        for record in records
+    ]
 
 
 # ---------------------------------------------------------
@@ -214,10 +243,16 @@ def get_trajectory(component_id: str):
         )
 
     df = df.sort_values("time_hours")
+    checkpoints = df.to_dict(orient="records")
+    cleaned = [
+        {key: (None if pd.isna(value) else value.item() if hasattr(value, "item") else value)
+         for key, value in record.items()}
+        for record in checkpoints
+    ]
 
     return {
         "component_id": component_id,
-        "checkpoints": df.to_dict(orient="records")
+        "checkpoints": cleaned
     }
 
 
@@ -244,8 +279,53 @@ def get_predictions(component_id: str):
         df["target_true_value_168h"]
     ).abs()
 
+    prediction_rows = df.to_dict(orient="records")
+    cleaned = [
+        {key: (None if pd.isna(value) else value.item() if hasattr(value, "item") else value)
+         for key, value in record.items()}
+        for record in prediction_rows
+    ]
+
     return {
         "component_id": component_id,
         "available": True,
-        "predictions": df.to_dict(orient="records")
+        "predictions": cleaned
     }
+
+
+# ---------------------------------------------------------
+# Module B summary metrics from saved backend result files
+# ---------------------------------------------------------
+
+@app.get("/module-b/metrics")
+def get_module_b_metrics():
+    if not MODULE_B_VALIDATION_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Module B validation summary CSV not found.",
+        )
+
+    validation_df = pd.read_csv(MODULE_B_VALIDATION_FILE)
+    if validation_df.empty:
+        raise HTTPException(
+            status_code=404,
+            detail="Module B validation summary CSV is empty.",
+        )
+
+    rows = []
+    for _, row in validation_df.iterrows():
+        parameter_name = str(row["parameter_name"])
+        rows.append({
+            "parameter_name": parameter_name,
+            "Parameter": PARAMETERS.get(parameter_name, parameter_name),
+            "Key": parameter_name,
+            "Baseline MAE": float(row.get("mean_absolute_error", 0.0) or 0.0),
+            "B1 MAE": float(row.get("mean_absolute_error", 0.0) or 0.0),
+            "B1 R²": "N/A",
+            "Improvement vs baseline (%)": 0.0,
+            "p95_absolute_error": float(row.get("p95_absolute_error", 0.0) or 0.0),
+            "p99_absolute_error": float(row.get("p99_absolute_error", 0.0) or 0.0),
+            "max_absolute_error": float(row.get("max_absolute_error", 0.0) or 0.0),
+        })
+
+    return rows

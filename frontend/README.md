@@ -1,36 +1,52 @@
 # HMC 30W DC-DC Converter Dashboard
 
-A modular Streamlit MVP for converter reliability monitoring, burn-in analysis, anomaly detection, 168h drift prediction, and ML evaluation.
+A modular Streamlit dashboard for converter reliability monitoring, burn-in analysis, anomaly detection, and 168h prediction review.
 
 ## Features
 
 - Dark industrial engineering dashboard with custom sidebar navigation
 - Overview, component analysis, Module A, Module B, ML performance, and dataset pipeline views
 - Plotly charts and compact engineering tables
-- Deterministic mock/demo data with visible Demo Mode labeling
-- Backend-ready `DataService` facade so API adapters can replace mock data without rewriting UI pages
-- Exact supplied B0/B1 evaluation metrics, including the verified matched-prediction note
+- Real backend connectivity when the existing FastAPI service is running
+- Graceful fallback to the current demo dataset if the backend is unavailable
+- Existing backend result files and ML screening outputs remain the source of truth
+
+## Install
+
+From the project root:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
 
 ## Run
 
+Start the backend API:
+
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+uvicorn backend.backend.app:app --host 127.0.0.1 --port 8000
 ```
 
-The application starts on the Overview page and does not require a backend, login, or uploaded files.
+Then launch the dashboard:
+
+```bash
+streamlit run frontend/app.py
+```
+
+The dashboard starts on the Overview page and uses the existing backend endpoints (summary, component, trajectory, and prediction data) when available.
 
 ## Structure
 
-- `app.py` - page configuration and routing only
-- `data/mock_data.py` - all demo data and evaluation values
-- `services/data_service.py` - UI-facing data contract for future API integration
-- `components/` - reusable cards, charts, tables, header, and sidebar
-- `pages/` - individual dashboard views
-- `styles/theme.py` - centralized CSS and Plotly theme
+- `frontend/app.py` - page configuration and routing only
+- `frontend/services/data_service.py` - UI facade that calls the backend API or falls back to local demo data
+- `frontend/data/mock_data.py` - legacy demo dataset retained as a fallback
+- `frontend/components/` - reusable cards, charts, tables, header, and sidebar
+- `frontend/pages/` - individual dashboard views
+- `backend/backend/app.py` - FastAPI API exposing the existing project results and burn-in data
+- `backend/results/` - generated ML screening and summary files used by the backend
 
-## Demo mode and backend integration
+## Current integration status
 
-The sidebar visibly reports Demo Mode. Mock values are illustrative and are not live hardware measurements. Replace methods in `services/data_service.py` with adapters for endpoints such as `/api/overview`, `/api/components/{component_id}`, and `/api/ml/metrics`; page modules should not need to change.
-
-The Module B view preserves the current evaluation context: B0 and B1 contain 4,800 matched test predictions with zero target mismatches and zero prediction differences. The dashboard does not infer why that occurred.
+The frontend is wired to the real backend where supported, especially for overview data, component detail, review statuses, and burn-in trajectories. The Module B evaluation table remains clearly labeled as existing evaluation context and is not treated as live hardware telemetry.
