@@ -1,0 +1,39 @@
+{
+  "module": "Module A - Dynamic Trajectory Anomaly Detection",
+  "dataset": "HMC 30W DC-DC synthetic prototype dataset",
+  "measurement_file": "hmc_dataset_v2_phase2d_v3\\burnin_measurements_quality.parquet",
+  "quality_file": "hmc_dataset_v2_phase2d_v3\\measurement_quality_truth.parquet",
+  "ground_truth_file": "hmc_dataset_v2_phase2c\\component_ground_truth.parquet",
+  "split_file": "hmc_dataset_v2_phase3a_split_fix\\ml_split_assignments_stratified.parquet",
+  "checkpoints_hours": [
+    0.0,
+    24.0,
+    96.0,
+    168.0
+  ],
+  "parameters": [
+    "output_voltage_pos15_V",
+    "output_voltage_neg15_V",
+    "output_voltage_5V_V",
+    "efficiency_percent",
+    "switching_frequency_Hz",
+    "regulation_percent",
+    "ripple_mV",
+    "turn_on_rise_time_us"
+  ],
+  "normal_reference": "normal training components only",
+  "trajectory_features": [
+    "0-24h absolute drift",
+    "24-96h absolute drift",
+    "96-168h absolute drift",
+    "0-168h total absolute drift"
+  ],
+  "quality_handling": {
+    "missing": "excluded from trajectory scoring",
+    "corrupted": "excluded from trajectory scoring",
+    "row_missing": "excluded from trajectory scoring",
+    "noisy": "used but flagged as lower confidence"
+  },
+  "prototype_rule": "REVIEW when maximum trajectory anomaly score exceeds 2.0",
+  "important_note": "The anomaly threshold is a statistical prototype reference learned from normal training data and is not an HMC qualification or acceptance limit."
+}

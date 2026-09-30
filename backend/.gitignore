@@ -1,0 +1,57 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment / secrets
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Generated datasets and experiments
+burnin_dataset/
+burnin_dataset_dev/
+hmc_dataset_dev/
+hmc_dataset_v2_*/
+
+# Generated experiment directories
+phase2*/
+phase3a*/
+
+# Old root-level experiment / analysis scripts
+/*.py
+/*.ipynb
+
+# Large Module A intermediate result
+results/module_a/module_a_component_scores.csv
+
+# Keep the required API measurement dataset
+!hmc_dataset_v2_phase2d_v3/
+!hmc_dataset_v2_phase2d_v3/burnin_measurements_quality.parquet
+
+# Additional local measurement artifacts
+hmc_dataset_v2_phase2d_v3/clean_reference_measurements.parquet
+hmc_dataset_v2_phase2d_v3/dataset_manifest.json
+hmc_dataset_v2_phase2d_v3/measurement_quality_truth.parquet
